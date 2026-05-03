@@ -437,12 +437,9 @@ setup_firewall() {
   chmod +x /opt/doh-server/manage.sh 2>/dev/null
   cat > /usr/local/bin/k << 'KEOF'
 #!/bin/bash
-bash /opt/doh-server/manage.sh "$@"
+exec bash /opt/doh-server/manage.sh "$@"
 KEOF
   chmod +x /usr/local/bin/k
-  if ! grep -q 'alias k=' /root/.bashrc 2>/dev/null; then
-    echo 'alias k="bash /opt/doh-server/manage.sh"' >> /root/.bashrc
-  fi
 }
 
 # ─── 菜单 ────────────────────────────────────────────────────────
