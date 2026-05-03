@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sub-Store</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-hover: #79b8ff;
+    --danger: #f85149;
+    --danger-hover: #ff6e6a;
+    --success: #3fb950;
+    --input-bg: #0d1117;
+    --input-border: #30363d;
+    --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 16px 32px;
+  }
+  header {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 24px; font-weight: 600; }
+  header .logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px; color: var(--bg);
+  }
+  .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .form-row input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus { border-color: var(--accent); }
+  .form-row input::placeholder { color: var(--text-dim); }
+  button {
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  button:hover { border-color: var(--text-dim); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-danger { color: var(--danger); border-color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn-icon { padding: 6px 10px; font-size: 16px; line-height: 1; }
+
+  /* Sub list */
+  .sub-list { display: flex; flex-direction: column; gap: 8px; }
+  .sub-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    flex-wrap: wrap;
+  }
+  .sub-info { flex: 1; min-width: 200px; }
+  .sub-info .name { font-weight: 600; font-size: 14px; }
+  .sub-info .url {
+    font-size: 13px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+    display: inline-block;
+  }
+  .sub-info .node-count {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .sub-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .empty-msg {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  .stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-card .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* DOH */
+  .doh-result {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    min-height: 40px;
+    display: none;
+  }
+  .doh-result.visible { display: block; }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toast {
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: #fff;
+    animation: slideIn 0.2s ease-out, fadeOut 0.3s 2.7s ease-in forwards;
+    max-width: 360px;
+    word-break: break-word;
+  }
+  .toast.success { background: #238636; border: 1px solid #2ea043; }
+  .toast.error { background: #8b1a1a; border: 1px solid var(--danger); }
+  .toast.info { background: #1f3d5c; border: 1px solid var(--accent); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+
+  .loading { opacity: 0.5; pointer-events: none; }
+
+  @media (max-width: 600px) {
+    .sub-item { flex-direction: column; align-items: flex-start; }
+    .sub-actions { width: 100%; }
+    .form-row { flex-direction: column; }
+    .form-row input { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">S</div>
+  <h1>Sub-Store</h1>
+</header>
+
+<div class="container">
+  <!-- Add Subscription -->
+  <div class="card">
+    <h2>Add Subscription</h2>
+    <div class="form-row">
+      <input type="text" id="subName" placeholder="Name">
+      <input type="url" id="subUrl" placeholder="Subscription URL">
+      <button class="btn-primary" id="addBtn">Add</button>
+    </div>
+  </div>
+
+  <!-- Subscriptions -->
+  <div class="card">
+    <h2>Subscriptions <span id="subCount" style="color:var(--text-dim);font-weight:400;font-size:14px"></span></h2>
+    <div id="subList" class="sub-list">
+      <div class="empty-msg">No subscriptions yet</div>
+    </div>
+  </div>
+
+  <!-- Node Stats -->
+  <div class="card">
+    <h2>Node Statistics</h2>
+    <div id="statsGrid" class="stats-grid">
+      <div class="stat-card"><div class="value">-</div><div class="label">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- DOH Test -->
+  <div class="card">
+    <h2>DNS-over-HTTPS Test</h2>
+    <div class="form-row">
+      <input type="text" id="dohDomain" placeholder="Domain (e.g. google.com)">
+      <button id="dohTestBtn">Test DOH</button>
+      <button id="dohResolveBtn" class="btn-primary">Resolve</button>
+    </div>
+    <div id="dohResult" class="doh-result"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const API = '';  // Same origin
+
+// --- Toast ---
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// --- Fetch helper ---
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+    return data;
+  } catch (e) {
+    toast(e.message, 'error');
+    throw e;
+  }
+}
+
+// --- Subscriptions ---
+async function loadSubscriptions() {
+  try {
+    const subs = await api('/api/subscriptions');
+    const list = document.getElementById('subList');
+    const count = document.getElementById('subCount');
+    count.textContent = subs.length ? `(${subs.length})` : '';
+    if (!subs.length) {
+      list.innerHTML = '<div class="empty-msg">No subscriptions yet</div>';
+      return;
+    }
+    list.innerHTML = subs.map(s => `
+      <div class="sub-item">
+        <div class="sub-info">
+          <div class="name">${esc(s.name)}</div>
+          <div class="url" title="${esc(s.url)}">${esc(s.url)}</div>
+          <div class="node-count">${s.node_count ?? '?'} nodes · ${esc(s.type || 'unknown')}</div>
+        </div>
+        <div class="sub-actions">
+          <button class="btn-sm" onclick="refreshSub('${s.id}')" title="Refresh">🔄</button>
+          <button class="btn-sm" onclick="copyLink('${s.id}','clash')" title="Copy Clash link">Clash</button>
+          <button class="btn-sm" onclick="copyLink('${s.id}','singbox')" title="Copy Sing-box link">Sing-box</button>
+          <button class="btn-sm btn-danger" onclick="deleteSub('${s.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+async function addSubscription() {
+  const name = document.getElementById('subName').value.trim();
+  const url = document.getElementById('subUrl').value.trim();
+  if (!name || !url) return toast('Name and URL required', 'error');
+  try {
+    await api('/api/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify({ name, url }),
+    });
+    toast('Subscription added', 'success');
+    document.getElementById('subName').value = '';
+    document.getElementById('subUrl').value = '';
+    loadSubscriptions();
+    loadStats();
+  } catch {}
+}
+
+async function deleteSub(id) {
+  try {
+    await api(`/api/subscriptions/${id}`, { method: 'DELETE' });
+    toast('Deleted', 'success');
+    loadSubscriptions();
+    loadStats();
+  } catch {}
+}
+
+async function refreshSub(id) {
+  try {
+    await api(`/api/subscriptions/${id}/refresh`, { method: 'POST' });
+    toast('Refreshed', 'success');
+    loadSubscriptions();
+    loadStats();
+  } catch {}
+}
+
+function copyLink(id, type) {
+  const url = `${window.location.origin}/api/sub/${id}/${type}`;
+  navigator.clipboard.writeText(url).then(
+    () => toast(`${type} link copied`, 'success'),
+    () => toast('Copy failed', 'error')
+  );
+}
+
+// --- Stats ---
+async function loadStats() {
+  try {
+    const stats = await api('/api/nodes/stats');
+    const grid = document.getElementById('statsGrid');
+    let html = `<div class="stat-card"><div class="value">${stats.total ?? 0}</div><div class="label">Total Nodes</div></div>`;
+    if (stats.by_type) {
+      for (const [type, count] of Object.entries(stats.by_type)) {
+        html += `<div class="stat-card"><div class="value">${count}</div><div class="label">${esc(type)}</div></div>`;
+      }
+    }
+    grid.innerHTML = html;
+  } catch {
+    document.getElementById('statsGrid').innerHTML =
+      '<div class="stat-card"><div class="value">0</div><div class="label">Total Nodes</div></div>';
+  }
+}
+
+// --- DOH ---
+async function testDoh() {
+  const result = document.getElementById('dohResult');
+  result.classList.add('visible');
+  result.textContent = 'Testing DOH...';
+  try {
+    const data = await api('/api/doh/test');
+    result.textContent = JSON.stringify(data, null, 2);
+    toast('DOH test passed', 'success');
+  } catch {
+    result.textContent = 'DOH test failed';
+  }
+}
+
+async function resolveDoh() {
+  const domain = document.getElementById('dohDomain').value.trim();
+  if (!domain) return toast('Enter a domain', 'error');
+  const result = document.getElementById('dohResult');
+  result.classList.add('visible');
+  result.textContent = `Resolving ${domain}...`;
+  try {
+    const data = await api('/api/doh/resolve', {
+      method: 'POST',
+      body: JSON.stringify({ domain }),
+    });
+    result.textContent = JSON.stringify(data, null, 2);
+    toast('Resolved', 'success');
+  } catch {
+    result.textContent = 'Resolve failed';
+  }
+}
+
+// --- Utils ---
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// --- Init ---
+document.getElementById('addBtn').addEventListener('click', addSubscription);
+document.getElementById('subUrl').addEventListener('keydown', e => { if (e.key === 'Enter') addSubscription(); });
+document.getElementById('subName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('subUrl').focus(); });
+document.getElementById('dohTestBtn').addEventListener('click', testDoh);
+document.getElementById('dohResolveBtn').addEventListener('click', resolveDoh);
+document.getElementById('dohDomain').addEventListener('keydown', e => { if (e.key === 'Enter') resolveDoh(); });
+
+loadSubscriptions();
+loadStats();
+</script>
+</body>
+</html>
