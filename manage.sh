@@ -429,6 +429,13 @@ setup_firewall() {
     ufw reload 2>/dev/null || true
     ok "防火墙就绪（SSH:$ssh_port 端口:$(echo "$@" | tr ' ' ',')）"
   fi
+
+  # 快捷命令
+  if ! grep -q 'alias k=' /root/.bashrc 2>/dev/null; then
+    echo 'alias k="bash /opt/doh-server/manage.sh"' >> /root/.bashrc
+  fi
+  ln -sf /opt/doh-server/manage.sh /usr/local/bin/k
+  chmod +x /opt/doh-server/manage.sh
 }
 
 # ─── 菜单 ────────────────────────────────────────────────────────
