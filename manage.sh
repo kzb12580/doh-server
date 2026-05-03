@@ -435,10 +435,14 @@ setup_firewall() {
   curl -sSL "https://raw.githubusercontent.com/kzb12580/sub-store/main/manage.sh" \
     -o /opt/doh-server/manage.sh 2>/dev/null || true
   chmod +x /opt/doh-server/manage.sh 2>/dev/null
+  cat > /usr/local/bin/k << 'KEOF'
+#!/bin/bash
+bash /opt/doh-server/manage.sh "$@"
+KEOF
+  chmod +x /usr/local/bin/k
   if ! grep -q 'alias k=' /root/.bashrc 2>/dev/null; then
     echo 'alias k="bash /opt/doh-server/manage.sh"' >> /root/.bashrc
   fi
-  ln -sf /opt/doh-server/manage.sh /usr/local/bin/k
 }
 
 # ─── 菜单 ────────────────────────────────────────────────────────
