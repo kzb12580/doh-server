@@ -15,6 +15,7 @@ import (
 	"sub-store/doh"
 	"sub-store/handlers"
 	"sub-store/models"
+	"sub-store/scheduler"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,10 +28,12 @@ func main() {
 	configPath := flag.String("config", "data/config.json", "配置文件路径")
 	flag.Parse()
 
+	logger := log.Default()
+
 	// 加载配置
 	cfg, err := config.Load(*configPath)
 	if err != nil {
-		log.Printf("配置加载失败，使用默认配置: %v", err)
+		logger.Printf("配置加载失败，使用默认配置: %v", err)
 		cfg = config.Default()
 	}
 
@@ -43,6 +46,11 @@ func main() {
 	// 初始化 DOH 解析器
 	dohResolver := doh.NewResolver(cfg.DOHServers, cfg.DOHEngine)
 
+	// 初始化调度器
+	sched := scheduler.New(store, logger)
+	sched.Start()
+	defer sched.Stop()
+
 	// 初始化路由
 	if cfg.LogLevel != "debug" {
 		gin.SetMode(gin.ReleaseMode)
@@ -53,17 +61,29 @@ func main() {
 	api := r.Group("/api")
 	{
 		// 订阅管理
-		subHandler := handlers.NewSubscriptionHandler(store, dohResolver)
+		subHandler := handlers.NewSubscriptionHandler(store, dohResolver, sched)
 		api.GET("/subscriptions", subHandler.List)
 		api.POST("/subscriptions", subHandler.Create)
 		api.PUT("/subscriptions/:id", subHandler.Update)
 		api.DELETE("/subscriptions/:id", subHandler.Delete)
 		api.POST("/subscriptions/:id/refresh", subHandler.Refresh)
+		api.POST("/subscriptions/refresh-all", subHandler.RefreshAll)
+
+		// 批量导入导出
+		importHandler := handlers.NewImportHandler(store)
+		api.POST("/subscriptions/import", importHandler.Import)
+		api.POST("/subscriptions/import-text", importHandler.ImportText)
+		api.GET("/subscriptions/export", importHandler.Export)
 
 		// 节点
 		nodeHandler := handlers.NewNodeHandler(store)
 		api.GET("/nodes", nodeHandler.List)
 		api.GET("/nodes/stats", nodeHandler.Stats)
+
+		// 节点延迟测试
+		pingHandler := handlers.NewPingHandler(store)
+		api.POST("/nodes/ping", pingHandler.Ping)
+		api.POST("/nodes/ping/batch", pingHandler.PingBatch)
 
 		// 订阅转换输出
 		convertHandler := handlers.NewConvertHandler(store, dohResolver)
@@ -79,7 +99,7 @@ func main() {
 		api.GET("/system/info", func(c *gin.Context) {
 			c.JSON(200, gin.H{
 				"name":    "Sub-Store",
-				"version": "1.0.0",
+				"version": "1.1.0",
 			})
 		})
 	}
@@ -110,7 +130,7 @@ func main() {
 	}
 
 	addr := fmt.Sprintf(":%d", *port)
-	fmt.Printf("🚀 Sub-Store v1.0.0 已启动\n")
+	fmt.Printf("🚀 Sub-Store v1.1.0 已启动\n")
 	fmt.Printf("📡 API: http://localhost%s/api\n", addr)
 	fmt.Printf("🌐 Web: http://localhost%s\n", addr)
 

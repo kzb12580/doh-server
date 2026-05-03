@@ -7,6 +7,7 @@ import (
 	"sub-store/doh"
 	"sub-store/models"
 	"sub-store/parser"
+	"sub-store/scheduler"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,11 +17,12 @@ import (
 type SubscriptionHandler struct {
 	store    *models.Store
 	resolver *doh.Resolver
+	sched    *scheduler.Scheduler
 }
 
-// NewSubscriptionHandler creates a handler wired to the given store and DoH resolver.
-func NewSubscriptionHandler(store *models.Store, resolver *doh.Resolver) *SubscriptionHandler {
-	return &SubscriptionHandler{store: store, resolver: resolver}
+// NewSubscriptionHandler creates a handler wired to the given store, DoH resolver, and scheduler.
+func NewSubscriptionHandler(store *models.Store, resolver *doh.Resolver, sched *scheduler.Scheduler) *SubscriptionHandler {
+	return &SubscriptionHandler{store: store, resolver: resolver, sched: sched}
 }
 
 // List returns all subscriptions. GET /api/subscriptions
@@ -117,6 +119,22 @@ func (h *SubscriptionHandler) Delete(c *gin.Context) {
 // Refresh re-fetches and parses the subscription URL. POST /api/subscriptions/:id/refresh
 func (h *SubscriptionHandler) Refresh(c *gin.Context) {
 	id := c.Param("id")
+
+	if h.sched != nil {
+		count, err := h.sched.RefreshSub(id)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": 1, "message": "刷新失败: " + err.Error()})
+			return
+		}
+		sub, _ := h.store.GetSubscription(id)
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{
+			"subscription": sub,
+			"node_count":   count,
+		}})
+		return
+	}
+
+	// Fallback without scheduler
 	sub, err := h.store.GetSubscription(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "message": "订阅不存在"})
@@ -129,7 +147,6 @@ func (h *SubscriptionHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	// Assign IDs and link to subscription
 	for i := range nodes {
 		if nodes[i].ID == "" {
 			nodes[i].ID = uuid.New().String()
@@ -150,4 +167,18 @@ func (h *SubscriptionHandler) Refresh(c *gin.Context) {
 		"subscription": sub,
 		"node_count":   len(nodes),
 	}})
+}
+
+// RefreshAll re-fetches all subscriptions. POST /api/subscriptions/refresh-all
+func (h *SubscriptionHandler) RefreshAll(c *gin.Context) {
+	if h.sched != nil {
+		err := h.sched.RefreshAll()
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": 1, "message": "部分刷新失败: " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"message": "全部刷新完成"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 1, "message": "调度器未初始化"})
 }

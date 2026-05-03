@@ -1,202 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sub-Store</title>
 <style>
-  :root {
-    --bg: #0d1117;
-    --card: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-dim: #8b949e;
-    --accent: #58a6ff;
-    --accent-hover: #79b8ff;
-    --danger: #f85149;
-    --danger-hover: #ff6e6a;
-    --success: #3fb950;
-    --input-bg: #0d1117;
-    --input-border: #30363d;
-    --radius: 8px;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 0 16px 32px;
-  }
-  header {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 24px 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  header h1 { font-size: 24px; font-weight: 600; }
-  header .logo {
-    width: 32px; height: 32px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 18px; color: var(--bg);
-  }
-  .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-  }
-  .card h2 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text);
-  }
-  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .form-row input {
-    flex: 1;
-    min-width: 200px;
-    padding: 10px 12px;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .form-row input:focus { border-color: var(--accent); }
-  .form-row input::placeholder { color: var(--text-dim); }
-  button {
-    padding: 10px 18px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--card);
-    color: var(--text);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  button:hover { border-color: var(--text-dim); }
-  .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
-    font-weight: 600;
-  }
-  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-  .btn-danger { color: var(--danger); border-color: var(--danger); }
-  .btn-danger:hover { background: var(--danger); color: #fff; }
-  .btn-sm { padding: 6px 12px; font-size: 13px; }
-  .btn-icon { padding: 6px 10px; font-size: 16px; line-height: 1; }
-
-  /* Sub list */
-  .sub-list { display: flex; flex-direction: column; gap: 8px; }
-  .sub-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    flex-wrap: wrap;
-  }
-  .sub-info { flex: 1; min-width: 200px; }
-  .sub-info .name { font-weight: 600; font-size: 14px; }
-  .sub-info .url {
-    font-size: 13px;
-    color: var(--text-dim);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 400px;
-    display: inline-block;
-  }
-  .sub-info .node-count {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-  .sub-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-  .empty-msg {
-    text-align: center;
-    padding: 24px;
-    color: var(--text-dim);
-    font-size: 14px;
-  }
-
-  /* Stats */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-  }
-  .stat-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px;
-    text-align: center;
-  }
-  .stat-card .value { font-size: 28px; font-weight: 700; color: var(--accent); }
-  .stat-card .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
-
-  /* DOH */
-  .doh-result {
-    margin-top: 12px;
-    padding: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    font-family: 'SFMono-Regular', Consolas, monospace;
-    font-size: 13px;
-    color: var(--text-dim);
-    white-space: pre-wrap;
-    min-height: 40px;
-    display: none;
-  }
-  .doh-result.visible { display: block; }
-
-  /* Toast */
-  .toast-container {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .toast {
-    padding: 12px 18px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    color: #fff;
-    animation: slideIn 0.2s ease-out, fadeOut 0.3s 2.7s ease-in forwards;
-    max-width: 360px;
-    word-break: break-word;
-  }
-  .toast.success { background: #238636; border: 1px solid #2ea043; }
-  .toast.error { background: #8b1a1a; border: 1px solid var(--danger); }
-  .toast.info { background: #1f3d5c; border: 1px solid var(--accent); }
-  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
-
-  .loading { opacity: 0.5; pointer-events: none; }
-
-  @media (max-width: 600px) {
-    .sub-item { flex-direction: column; align-items: flex-start; }
-    .sub-actions { width: 100%; }
-    .form-row { flex-direction: column; }
-    .form-row input { min-width: 100%; }
-  }
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d;
+  --text: #e6edf3; --dim: #8b949e; --accent: #58a6ff;
+  --accent2: #79b8ff; --danger: #f85149; --danger2: #ff6e6a;
+  --success: #3fb950; --warn: #d29922; --input-bg: #0d1117;
+  --input-border: #30363d; --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+header { background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+header .logo { width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; color:var(--bg); }
+header h1 { font-size:18px; font-weight:600; flex:1; }
+header .version { font-size:12px; color:var(--dim); }
+.tabs { display:flex; gap:0; background:var(--card); border-bottom:1px solid var(--border); padding:0 24px; overflow-x:auto; }
+.tab { padding:12px 20px; cursor:pointer; color:var(--dim); font-size:14px; font-weight:500; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.main { max-width:1100px; margin:0 auto; padding:20px 16px; }
+.page { display:none; }
+.page.active { display:block; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+.card h2 { font-size:15px; font-weight:600; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.card h2 .count { color:var(--dim); font-weight:400; font-size:13px; }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+input, select { padding:8px 12px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:var(--radius); color:var(--text); font-size:13px; outline:none; transition:border-color .15s; }
+input:focus, select:focus { border-color:var(--accent); }
+input::placeholder { color:var(--dim); }
+input[type=text], input[type=url] { flex:1; min-width:180px; }
+button { padding:8px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card); color:var(--text); font-size:13px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+button:hover { border-color:var(--dim); }
+.btn-p { background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600; }
+.btn-p:hover { background:var(--accent2); border-color:var(--accent2); }
+.btn-d { color:var(--danger); border-color:var(--danger); }
+.btn-d:hover { background:var(--danger); color:#fff; }
+.btn-s { padding:5px 10px; font-size:12px; }
+.btn-w { color:var(--warn); border-color:var(--warn); }
+.btn-w:hover { background:var(--warn); color:#fff; }
+.btn-ok { color:var(--success); border-color:var(--success); }
+.btn-ok:hover { background:var(--success); color:#fff; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-ok { background:#238636; color:#fff; }
+.badge-timeout { background:#6e4020; color:#ffa657; }
+.badge-err { background:#8b1a1a; color:#ff7b72; }
+.empty { text-align:center; padding:32px; color:var(--dim); font-size:14px; }
+.sub-item { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; flex-wrap:wrap; }
+.sub-info { flex:1; min-width:200px; }
+.sub-info .name { font-weight:600; font-size:14px; }
+.sub-info .url { font-size:12px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:400px; display:inline-block; }
+.sub-info .meta { font-size:11px; color:var(--dim); margin-top:3px; display:flex; gap:8px; align-items:center; }
+.sub-actions { display:flex; gap:4px; flex-wrap:wrap; }
+.copy-link { font-family:monospace; font-size:11px; color:var(--accent); cursor:pointer; padding:2px 6px; border:1px solid var(--border); border-radius:4px; background:var(--bg); }
+.copy-link:hover { border-color:var(--accent); }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+.stat-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center; }
+.stat-card .value { font-size:28px; font-weight:700; color:var(--accent); }
+.stat-card .label { font-size:11px; color:var(--dim); margin-top:4px; }
+.node-table { width:100%; border-collapse:collapse; font-size:13px; }
+.node-table th { text-align:left; padding:8px 10px; color:var(--dim); font-weight:500; border-bottom:1px solid var(--border); font-size:12px; }
+.node-table td { padding:8px 10px; border-bottom:1px solid var(--border); }
+.node-table tr:hover { background:rgba(88,166,255,.04); }
+.node-table .mono { font-family:monospace; font-size:12px; }
+.result-box { margin-top:12px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); font-family:monospace; font-size:13px; color:var(--dim); white-space:pre-wrap; min-height:40px; display:none; }
+.result-box.show { display:block; }
+.toast-box { position:fixed; top:16px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { padding:10px 16px; border-radius:var(--radius); font-size:13px; color:#fff; animation:slideIn .2s ease-out,fadeOut .3s 2.7s ease-in forwards; max-width:340px; word-break:break-word; }
+.toast.ok { background:#238636; border:1px solid #2ea043; }
+.toast.err { background:#8b1a1a; border:1px solid var(--danger); }
+.toast.info { background:#1f3d5c; border:1px solid var(--accent); }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1} }
+@keyframes fadeOut { to{opacity:0;transform:translateY(-10px)} }
+.loading { opacity:.5; pointer-events:none; }
+.search-bar { margin-bottom:12px; }
+.filter-bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+.filter-bar select { min-width:100px; }
+.latency { display:inline-block; min-width:50px; text-align:right; }
+.latency.fast { color:var(--success); }
+.latency.medium { color:var(--warn); }
+.latency.slow { color:var(--danger); }
+.latency.timeout { color:var(--dim); }
+.progress { height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin:8px 0; }
+.progress-bar { height:100%; background:var(--accent); transition:width .3s; }
+.textarea { width:100%; min-height:100px; padding:10px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:var(--radius); color:var(--text); font-family:monospace; font-size:13px; resize:vertical; outline:none; }
+.textarea:focus { border-color:var(--accent); }
+.import-result { margin-top:12px; }
+.import-result table { width:100%; font-size:13px; }
+.import-result td, .import-result th { padding:6px 10px; text-align:left; }
+@media(max-width:600px) {
+  .sub-item { flex-direction:column; align-items:flex-start; }
+  .sub-actions { width:100%; }
+  .row { flex-direction:column; }
+  .row input { min-width:100%; }
+  .node-table { font-size:12px; }
+  .tabs { padding:0 8px; }
+  .tab { padding:10px 12px; font-size:13px; }
+}
 </style>
 </head>
 <body>
@@ -204,54 +107,172 @@
 <header>
   <div class="logo">S</div>
   <h1>Sub-Store</h1>
+  <span class="version" id="ver">v1.1.0</span>
 </header>
 
-<div class="container">
-  <!-- Add Subscription -->
+<div class="tabs" id="tabs">
+  <div class="tab active" data-page="subs">📦 订阅管理</div>
+  <div class="tab" data-page="nodes">🌐 节点列表</div>
+  <div class="tab" data-page="ping">⚡ 延迟测试</div>
+  <div class="tab" data-page="tools">🔧 工具箱</div>
+</div>
+
+<div class="main">
+
+<!-- ===== 订阅管理 ===== -->
+<div class="page active" id="page-subs">
   <div class="card">
-    <h2>Add Subscription</h2>
-    <div class="form-row">
-      <input type="text" id="subName" placeholder="Name">
-      <input type="url" id="subUrl" placeholder="Subscription URL">
-      <button class="btn-primary" id="addBtn">Add</button>
+    <h2>➕ 添加订阅</h2>
+    <div class="row">
+      <input type="text" id="subName" placeholder="名称（如：机场A）">
+      <input type="url" id="subUrl" placeholder="订阅链接">
+      <button class="btn-p" onclick="addSub()">添加</button>
+    </div>
+    <div style="margin-top:10px">
+      <label style="font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="autoRefresh"> 自动刷新，间隔
+        <input type="number" id="refreshInterval" value="60" min="5" style="width:60px;padding:4px 8px;"> 分钟
+      </label>
     </div>
   </div>
 
-  <!-- Subscriptions -->
   <div class="card">
-    <h2>Subscriptions <span id="subCount" style="color:var(--text-dim);font-weight:400;font-size:14px"></span></h2>
-    <div id="subList" class="sub-list">
-      <div class="empty-msg">No subscriptions yet</div>
+    <h2>📋 订阅列表 <span class="count" id="subCount"></span></h2>
+    <div class="row" style="margin-bottom:12px;">
+      <button onclick="refreshAll()" class="btn-s btn-ok">🔄 全部刷新</button>
+      <button onclick="showImportModal()" class="btn-s">📥 批量导入</button>
+      <button onclick="exportSubs()" class="btn-s">📤 导出备份</button>
     </div>
+    <div id="subList"><div class="empty">暂无订阅，添加一个试试</div></div>
   </div>
 
-  <!-- Node Stats -->
   <div class="card">
-    <h2>Node Statistics</h2>
+    <h2>📊 统计概览</h2>
     <div id="statsGrid" class="stats-grid">
-      <div class="stat-card"><div class="value">-</div><div class="label">Loading...</div></div>
+      <div class="stat-card"><div class="value">-</div><div class="label">加载中...</div></div>
     </div>
-  </div>
-
-  <!-- DOH Test -->
-  <div class="card">
-    <h2>DNS-over-HTTPS Test</h2>
-    <div class="form-row">
-      <input type="text" id="dohDomain" placeholder="Domain (e.g. google.com)">
-      <button id="dohTestBtn">Test DOH</button>
-      <button id="dohResolveBtn" class="btn-primary">Resolve</button>
-    </div>
-    <div id="dohResult" class="doh-result"></div>
   </div>
 </div>
 
-<div class="toast-container" id="toasts"></div>
+<!-- ===== 节点列表 ===== -->
+<div class="page" id="page-nodes">
+  <div class="card">
+    <h2>🌐 节点列表 <span class="count" id="nodeCount"></span></h2>
+    <div class="search-bar">
+      <div class="row">
+        <input type="text" id="nodeSearch" placeholder="🔍 搜索节点名称/服务器..." oninput="filterNodes()">
+        <select id="nodeTypeFilter" onchange="filterNodes()">
+          <option value="">全部类型</option>
+          <option value="vmess">VMess</option>
+          <option value="vless">VLESS</option>
+          <option value="trojan">Trojan</option>
+          <option value="ss">SS</option>
+          <option value="hysteria2">Hysteria2</option>
+          <option value="tuic">TUIC</option>
+        </select>
+        <select id="nodeSubFilter" onchange="filterNodes()"><option value="">全部订阅</option></select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="node-table" id="nodeTable">
+        <thead><tr>
+          <th>#</th><th>名称</th><th>类型</th><th>服务器</th><th>端口</th><th>TLS</th><th>延迟</th>
+        </tr></thead>
+        <tbody id="nodeBody"><tr><td colspan="7" class="empty">加载中...</td></tr></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn-s btn-p" onclick="pingAllNodes()">⚡ 测试全部延迟</button>
+      <button class="btn-s" onclick="copyAllNodes()">📋 复制全部URI</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 延迟测试 ===== -->
+<div class="page" id="page-ping">
+  <div class="card">
+    <h2>⚡ 节点延迟测试</h2>
+    <div class="row">
+      <input type="text" id="pingServer" placeholder="服务器地址">
+      <input type="number" id="pingPort" placeholder="端口" style="width:80px;">
+      <button class="btn-p" onclick="pingSingle()">测试</button>
+    </div>
+    <div id="pingResult" class="result-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 批量延迟测试</h2>
+    <div class="row" style="margin-bottom:12px;">
+      <select id="pingSubSelect"><option value="">全部订阅</option></select>
+      <button class="btn-p" onclick="pingBatch()">开始测试</button>
+    </div>
+    <div id="pingProgress" style="display:none;">
+      <div class="progress"><div class="progress-bar" id="pingBar" style="width:0"></div></div>
+    </div>
+    <div id="pingBatchResult" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- ===== 工具箱 ===== -->
+<div class="page" id="page-tools">
+  <div class="card">
+    <h2>🔍 DOH DNS 解析</h2>
+    <div class="row">
+      <input type="text" id="dohDomain" placeholder="域名（如 google.com）">
+      <button onclick="dohTest()">连接测试</button>
+      <button class="btn-p" onclick="dohResolve()">解析</button>
+    </div>
+    <div id="dohResult" class="result-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>📥 导入订阅文本</h2>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:10px;">粘贴 base64 编码的订阅内容或代理 URI（每行一个），自动解析并创建订阅。</p>
+    <input type="text" id="importSubName" placeholder="订阅名称" style="margin-bottom:8px;">
+    <textarea class="textarea" id="importText" placeholder="粘贴订阅内容或代理 URI..."></textarea>
+    <div style="margin-top:10px;">
+      <button class="btn-p" onclick="importText()">导入</button>
+    </div>
+    <div id="importResult" class="result-box"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔗 一键订阅链接</h2>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:10px;">将所有订阅合并为一个链接，可直接导入客户端。</p>
+    <div class="row">
+      <span class="copy-link" id="linkClash" onclick="copyText(this.textContent)">...</span>
+      <span style="font-size:12px;color:var(--dim);">Clash</span>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <span class="copy-link" id="linkSingbox" onclick="copyText(this.textContent)">...</span>
+      <span style="font-size:12px;color:var(--dim);">Sing-box</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- main -->
+
+<!-- Toast -->
+<div class="toast-box" id="toasts"></div>
+
+<!-- Import Modal -->
+<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+    <h2 style="font-size:15px;margin-bottom:14px;">📥 批量导入订阅</h2>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:10px;">每行一个订阅链接，格式：名称|URL 或 直接URL</p>
+    <textarea class="textarea" id="batchImportText" rows="8" placeholder="机场A|https://example.com/sub1&#10;机场B|https://example.com/sub2&#10;https://example.com/sub3"></textarea>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeImportModal()">取消</button>
+      <button class="btn-p" onclick="batchImport()">导入</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const API = '';  // Same origin
+const API = '';
 
-// --- Toast ---
-function toast(msg, type = 'info') {
+// ===== Utils =====
+function toast(msg, type='info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
@@ -259,145 +280,13 @@ function toast(msg, type = 'info') {
   setTimeout(() => el.remove(), 3000);
 }
 
-// --- Fetch helper ---
-async function api(path, opts = {}) {
-  try {
-    const res = await fetch(API + path, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opts,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
-    return data;
-  } catch (e) {
-    toast(e.message, 'error');
-    throw e;
-  }
+async function api(path, opts={}) {
+  const res = await fetch(API + path, { headers:{'Content-Type':'application/json'}, ...opts });
+  const data = await res.json().catch(() => ({}));
+  if (data.code !== undefined && data.code !== 0) throw new Error(data.message || '请求失败');
+  return data.data !== undefined ? data.data : data;
 }
 
-// --- Subscriptions ---
-async function loadSubscriptions() {
-  try {
-    const subs = await api('/api/subscriptions');
-    const list = document.getElementById('subList');
-    const count = document.getElementById('subCount');
-    count.textContent = subs.length ? `(${subs.length})` : '';
-    if (!subs.length) {
-      list.innerHTML = '<div class="empty-msg">No subscriptions yet</div>';
-      return;
-    }
-    list.innerHTML = subs.map(s => `
-      <div class="sub-item">
-        <div class="sub-info">
-          <div class="name">${esc(s.name)}</div>
-          <div class="url" title="${esc(s.url)}">${esc(s.url)}</div>
-          <div class="node-count">${s.node_count ?? '?'} nodes · ${esc(s.type || 'unknown')}</div>
-        </div>
-        <div class="sub-actions">
-          <button class="btn-sm" onclick="refreshSub('${s.id}')" title="Refresh">🔄</button>
-          <button class="btn-sm" onclick="copyLink('${s.id}','clash')" title="Copy Clash link">Clash</button>
-          <button class="btn-sm" onclick="copyLink('${s.id}','singbox')" title="Copy Sing-box link">Sing-box</button>
-          <button class="btn-sm btn-danger" onclick="deleteSub('${s.id}')" title="Delete">✕</button>
-        </div>
-      </div>
-    `).join('');
-  } catch {}
-}
-
-async function addSubscription() {
-  const name = document.getElementById('subName').value.trim();
-  const url = document.getElementById('subUrl').value.trim();
-  if (!name || !url) return toast('Name and URL required', 'error');
-  try {
-    await api('/api/subscriptions', {
-      method: 'POST',
-      body: JSON.stringify({ name, url }),
-    });
-    toast('Subscription added', 'success');
-    document.getElementById('subName').value = '';
-    document.getElementById('subUrl').value = '';
-    loadSubscriptions();
-    loadStats();
-  } catch {}
-}
-
-async function deleteSub(id) {
-  try {
-    await api(`/api/subscriptions/${id}`, { method: 'DELETE' });
-    toast('Deleted', 'success');
-    loadSubscriptions();
-    loadStats();
-  } catch {}
-}
-
-async function refreshSub(id) {
-  try {
-    await api(`/api/subscriptions/${id}/refresh`, { method: 'POST' });
-    toast('Refreshed', 'success');
-    loadSubscriptions();
-    loadStats();
-  } catch {}
-}
-
-function copyLink(id, type) {
-  const url = `${window.location.origin}/api/sub/${id}/${type}`;
-  navigator.clipboard.writeText(url).then(
-    () => toast(`${type} link copied`, 'success'),
-    () => toast('Copy failed', 'error')
-  );
-}
-
-// --- Stats ---
-async function loadStats() {
-  try {
-    const stats = await api('/api/nodes/stats');
-    const grid = document.getElementById('statsGrid');
-    let html = `<div class="stat-card"><div class="value">${stats.total ?? 0}</div><div class="label">Total Nodes</div></div>`;
-    if (stats.by_type) {
-      for (const [type, count] of Object.entries(stats.by_type)) {
-        html += `<div class="stat-card"><div class="value">${count}</div><div class="label">${esc(type)}</div></div>`;
-      }
-    }
-    grid.innerHTML = html;
-  } catch {
-    document.getElementById('statsGrid').innerHTML =
-      '<div class="stat-card"><div class="value">0</div><div class="label">Total Nodes</div></div>';
-  }
-}
-
-// --- DOH ---
-async function testDoh() {
-  const result = document.getElementById('dohResult');
-  result.classList.add('visible');
-  result.textContent = 'Testing DOH...';
-  try {
-    const data = await api('/api/doh/test');
-    result.textContent = JSON.stringify(data, null, 2);
-    toast('DOH test passed', 'success');
-  } catch {
-    result.textContent = 'DOH test failed';
-  }
-}
-
-async function resolveDoh() {
-  const domain = document.getElementById('dohDomain').value.trim();
-  if (!domain) return toast('Enter a domain', 'error');
-  const result = document.getElementById('dohResult');
-  result.classList.add('visible');
-  result.textContent = `Resolving ${domain}...`;
-  try {
-    const data = await api('/api/doh/resolve', {
-      method: 'POST',
-      body: JSON.stringify({ domain }),
-    });
-    result.textContent = JSON.stringify(data, null, 2);
-    toast('Resolved', 'success');
-  } catch {
-    result.textContent = 'Resolve failed';
-  }
-}
-
-// --- Utils ---
 function esc(s) {
   if (!s) return '';
   const d = document.createElement('div');
@@ -405,16 +294,326 @@ function esc(s) {
   return d.innerHTML;
 }
 
-// --- Init ---
-document.getElementById('addBtn').addEventListener('click', addSubscription);
-document.getElementById('subUrl').addEventListener('keydown', e => { if (e.key === 'Enter') addSubscription(); });
-document.getElementById('subName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('subUrl').focus(); });
-document.getElementById('dohTestBtn').addEventListener('click', testDoh);
-document.getElementById('dohResolveBtn').addEventListener('click', resolveDoh);
-document.getElementById('dohDomain').addEventListener('keydown', e => { if (e.key === 'Enter') resolveDoh(); });
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(
+    () => toast('已复制', 'ok'),
+    () => toast('复制失败', 'err')
+  );
+}
 
-loadSubscriptions();
+// ===== Tabs =====
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + tab.dataset.page).classList.add('active');
+    if (tab.dataset.page === 'nodes') loadNodes();
+    if (tab.dataset.page === 'ping') updatePingSubSelect();
+    if (tab.dataset.page === 'tools') updateLinks();
+  });
+});
+
+// ===== Subscriptions =====
+let allSubs = [];
+
+async function loadSubs() {
+  try {
+    allSubs = await api('/api/subscriptions') || [];
+    const list = document.getElementById('subList');
+    document.getElementById('subCount').textContent = allSubs.length ? `(${allSubs.length})` : '';
+    if (!allSubs.length) { list.innerHTML = '<div class="empty">暂无订阅，添加一个试试</div>'; return; }
+    list.innerHTML = allSubs.map(s => `
+      <div class="sub-item">
+        <div class="sub-info">
+          <div class="name">${esc(s.name)}</div>
+          <div class="url" title="${esc(s.url)}">${esc(s.url)}</div>
+          <div class="meta">
+            <span>${s.node_count ?? '?'} 节点</span>
+            ${s.auto_refresh ? '<span>🔄 自动刷新 ' + s.interval + 'min</span>' : ''}
+            <span>${s.updated_at ? new Date(s.updated_at).toLocaleString('zh-CN') : ''}</span>
+          </div>
+        </div>
+        <div class="sub-actions">
+          <button class="btn-s" onclick="refreshSub('${s.id}')" title="刷新">🔄</button>
+          <button class="btn-s" onclick="copyLink('${s.id}','clash')" title="Clash 链接">Clash</button>
+          <button class="btn-s" onclick="copyLink('${s.id}','singbox')" title="Sing-box 链接">Sing-box</button>
+          <button class="btn-s btn-d" onclick="deleteSub('${s.id}')" title="删除">✕</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function addSub() {
+  const name = document.getElementById('subName').value.trim();
+  const url = document.getElementById('subUrl').value.trim();
+  if (!name || !url) return toast('名称和链接必填', 'err');
+  const autoRefresh = document.getElementById('autoRefresh').checked;
+  const interval = parseInt(document.getElementById('refreshInterval').value) || 60;
+  try {
+    await api('/api/subscriptions', { method:'POST', body:JSON.stringify({ name, url, auto_refresh:autoRefresh, interval }) });
+    toast('添加成功', 'ok');
+    document.getElementById('subName').value = '';
+    document.getElementById('subUrl').value = '';
+    loadSubs(); loadStats();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteSub(id) {
+  if (!confirm('确定删除？')) return;
+  try { await api(`/api/subscriptions/${id}`, {method:'DELETE'}); toast('已删除','ok'); loadSubs(); loadStats(); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+async function refreshSub(id) {
+  toast('刷新中...','info');
+  try { await api(`/api/subscriptions/${id}/refresh`, {method:'POST'}); toast('刷新完成','ok'); loadSubs(); loadStats(); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+async function refreshAll() {
+  toast('全部刷新中...','info');
+  try { await api('/api/subscriptions/refresh-all', {method:'POST'}); toast('全部刷新完成','ok'); loadSubs(); loadStats(); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+function copyLink(id, format) {
+  const url = `${window.location.origin}/api/sub/${id}/${format}`;
+  copyText(url);
+}
+
+// ===== Stats =====
+async function loadStats() {
+  try {
+    const stats = await api('/api/nodes/stats');
+    const grid = document.getElementById('statsGrid');
+    let html = `<div class="stat-card"><div class="value">${stats.total ?? 0}</div><div class="label">总节点</div></div>`;
+    const types = stats.by_type || {};
+    for (const [t, c] of Object.entries(types)) {
+      html += `<div class="stat-card"><div class="value">${c}</div><div class="label">${esc(t)}</div></div>`;
+    }
+    grid.innerHTML = html;
+  } catch {
+    document.getElementById('statsGrid').innerHTML = '<div class="stat-card"><div class="value">0</div><div class="label">总节点</div></div>';
+  }
+}
+
+// ===== Nodes =====
+let allNodes = [];
+
+async function loadNodes() {
+  try {
+    allNodes = await api('/api/nodes') || [];
+    document.getElementById('nodeCount').textContent = allNodes.length ? `(${allNodes.length})` : '';
+    // Update sub filter
+    const subFilter = document.getElementById('nodeSubFilter');
+    const subs = [...new Map(allSubs.map(s => [s.id, s.name])).entries()];
+    subFilter.innerHTML = '<option value="">全部订阅</option>' + subs.map(([id,name]) => `<option value="${id}">${esc(name)}</option>`).join('');
+    filterNodes();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function filterNodes() {
+  const q = document.getElementById('nodeSearch').value.toLowerCase();
+  const typeF = document.getElementById('nodeTypeFilter').value;
+  const subF = document.getElementById('nodeSubFilter').value;
+  let filtered = allNodes;
+  if (q) filtered = filtered.filter(n => (n.name||'').toLowerCase().includes(q) || (n.server||'').toLowerCase().includes(q));
+  if (typeF) filtered = filtered.filter(n => n.type === typeF);
+  if (subF) filtered = filtered.filter(n => n.sub_id === subF);
+  renderNodes(filtered);
+}
+
+function renderNodes(nodes) {
+  const body = document.getElementById('nodeBody');
+  if (!nodes.length) { body.innerHTML = '<tr><td colspan="7" class="empty">无匹配节点</td></tr>'; return; }
+  body.innerHTML = nodes.map((n, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${esc(n.name)}</td>
+      <td><span class="badge badge-ok">${esc(n.type)}</span></td>
+      <td class="mono">${esc(n.server)}</td>
+      <td>${n.port}</td>
+      <td>${n.tls ? '✅' : '—'}</td>
+      <td><span class="latency timeout" id="lat-${n.id}">—</span></td>
+    </tr>
+  `).join('');
+}
+
+async function pingAllNodes() {
+  toast('开始延迟测试...','info');
+  try {
+    const results = await api('/api/nodes/ping/batch', { method:'POST', body:JSON.stringify({timeout:5}) });
+    for (const r of results) {
+      const el = document.getElementById('lat-' + r.node_id);
+      if (!el) continue;
+      if (r.status === 'ok') {
+        el.textContent = r.latency_ms + 'ms';
+        el.className = 'latency ' + (r.latency_ms < 200 ? 'fast' : r.latency_ms < 500 ? 'medium' : 'slow');
+      } else {
+        el.textContent = '超时';
+        el.className = 'latency timeout';
+      }
+    }
+    toast('延迟测试完成','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function copyAllNodes() {
+  const uris = allNodes.map(n => n.raw_uri).filter(Boolean).join('\n');
+  copyText(uris);
+}
+
+// ===== Ping =====
+async function pingSingle() {
+  const server = document.getElementById('pingServer').value.trim();
+  const port = parseInt(document.getElementById('pingPort').value);
+  if (!server || !port) return toast('服务器和端口必填','err');
+  const box = document.getElementById('pingResult');
+  box.classList.add('show');
+  box.textContent = '测试中...';
+  try {
+    const r = await api('/api/nodes/ping', { method:'POST', body:JSON.stringify({server, port, timeout:5}) });
+    box.textContent = JSON.stringify(r, null, 2);
+    toast(r.status === 'ok' ? `延迟: ${r.latency_ms}ms` : '超时', r.status === 'ok' ? 'ok' : 'err');
+  } catch(e) { box.textContent = e.message; toast(e.message,'err'); }
+}
+
+async function updatePingSubSelect() {
+  const sel = document.getElementById('pingSubSelect');
+  sel.innerHTML = '<option value="">全部订阅</option>' + allSubs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+
+async function pingBatch() {
+  const subId = document.getElementById('pingSubSelect').value;
+  const prog = document.getElementById('pingProgress');
+  const bar = document.getElementById('pingBar');
+  const result = document.getElementById('pingBatchResult');
+  prog.style.display = 'block';
+  bar.style.width = '30%';
+  result.innerHTML = '<div style="color:var(--dim);font-size:13px;">测试中...</div>';
+  try {
+    bar.style.width = '60%';
+    const results = await api('/api/nodes/ping/batch', { method:'POST', body:JSON.stringify({sub_id:subId, timeout:5}) });
+    bar.style.width = '100%';
+    const ok = results.filter(r => r.status === 'ok');
+    const fail = results.filter(r => r.status !== 'ok');
+    ok.sort((a,b) => a.latency_ms - b.latency_ms);
+    result.innerHTML = `
+      <div style="font-size:13px;margin-bottom:8px;color:var(--dim);">✅ ${ok.length} 可达 / ❌ ${fail.length} 超时 / 共 ${results.length}</div>
+      <table class="node-table">
+        <thead><tr><th>#</th><th>名称</th><th>服务器</th><th>延迟</th><th>状态</th></tr></thead>
+        <tbody>
+          ${results.map((r,i) => `<tr>
+            <td>${i+1}</td>
+            <td>${esc(r.name)}</td>
+            <td class="mono">${esc(r.server)}:${r.port}</td>
+            <td>${r.status === 'ok' ? '<span class="latency '+(r.latency_ms<200?'fast':r.latency_ms<500?'medium':'slow')+'">'+r.latency_ms+'ms</span>' : '<span class="latency timeout">超时</span>'}</td>
+            <td><span class="badge ${r.status==='ok'?'badge-ok':'badge-timeout'}">${r.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+    setTimeout(() => prog.style.display = 'none', 1000);
+  } catch(e) { result.innerHTML = `<div style="color:var(--danger)">${e.message}</div>`; prog.style.display='none'; }
+}
+
+// ===== Import =====
+function showImportModal() {
+  document.getElementById('importModal').style.display = 'flex';
+}
+function closeImportModal() {
+  document.getElementById('importModal').style.display = 'none';
+}
+
+async function batchImport() {
+  const text = document.getElementById('batchImportText').value.trim();
+  if (!text) return toast('请输入订阅链接','err');
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const urls = lines.map(line => {
+    const parts = line.split('|');
+    if (parts.length >= 2) return { name: parts[0].trim(), url: parts[1].trim() };
+    return { name: '', url: line };
+  });
+  try {
+    const r = await api('/api/subscriptions/import', { method:'POST', body:JSON.stringify({urls}) });
+    toast(`导入完成: ${r.created}/${r.total} 成功`, 'ok');
+    closeImportModal();
+    loadSubs(); loadStats();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function exportSubs() {
+  try {
+    const data = await api('/api/subscriptions/export');
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sub-store-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click(); URL.revokeObjectURL(url);
+    toast('导出成功','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function importText() {
+  const text = document.getElementById('importText').value.trim();
+  const name = document.getElementById('importSubName').value.trim();
+  if (!text) return toast('请输入内容','err');
+  const box = document.getElementById('importResult');
+  box.classList.add('show');
+  box.textContent = '导入中...';
+  try {
+    const r = await api('/api/subscriptions/import-text', { method:'POST', body:JSON.stringify({text, name}) });
+    box.textContent = JSON.stringify(r, null, 2);
+    toast('导入成功','ok');
+    loadSubs(); loadStats();
+  } catch(e) { box.textContent = e.message; toast(e.message,'err'); }
+}
+
+// ===== DOH =====
+async function dohTest() {
+  const box = document.getElementById('dohResult');
+  box.classList.add('show');
+  box.textContent = '测试中...';
+  try {
+    const r = await api('/api/doh/test');
+    box.textContent = JSON.stringify(r, null, 2);
+    toast('DOH 正常','ok');
+  } catch(e) { box.textContent = e.message; }
+}
+
+async function dohResolve() {
+  const domain = document.getElementById('dohDomain').value.trim();
+  if (!domain) return toast('请输入域名','err');
+  const box = document.getElementById('dohResult');
+  box.classList.add('show');
+  box.textContent = `解析 ${domain}...`;
+  try {
+    const r = await api('/api/doh/resolve', { method:'POST', body:JSON.stringify({domain}) });
+    box.textContent = JSON.stringify(r, null, 2);
+    toast('解析完成','ok');
+  } catch(e) { box.textContent = e.message; }
+}
+
+// ===== Links =====
+function updateLinks() {
+  const origin = window.location.origin;
+  document.getElementById('linkClash').textContent = origin + '/api/sub/all/clash';
+  document.getElementById('linkSingbox').textContent = origin + '/api/sub/all/singbox';
+}
+
+// ===== Init =====
+document.getElementById('subUrl').addEventListener('keydown', e => { if (e.key==='Enter') addSub(); });
+document.getElementById('subName').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('subUrl').focus(); });
+
+loadSubs();
 loadStats();
+
+// Version
+api('/api/system/info').then(info => {
+  document.getElementById('ver').textContent = 'v' + (info.version || '?');
+}).catch(() => {});
 </script>
 </body>
 </html>

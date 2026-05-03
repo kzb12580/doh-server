@@ -1,62 +1,115 @@
 # Sub-Store
 
-轻量级订阅转换 + DNS over HTTPS 解析服务
+轻量级代理订阅管理与配置转换服务。
 
 ## 功能
 
-- 📦 **订阅管理** — 添加/更新/删除/刷新订阅源
-- 🔄 **协议解析** — VMess / VLESS / Trojan / SS / Hysteria2 / TUIC
-- 🌐 **DOH 解析** — Cloudflare / Google DNS over HTTPS，5分钟缓存
-- ⚡ **订阅转换** — 输出 Clash YAML / Sing-box JSON 配置
-- 📊 **节点统计** — 按协议类型统计
-- 🖥️ **轻量 Web UI** — 暗色主题单页管理面板
+- **多协议解析**：VMess、VLESS、Trojan、Shadowsocks、Hysteria2、TUIC
+- **配置转换**：一键生成 Clash / Sing-box 配置
+- **DOH 解析**：DNS-over-HTTPS 解析，避免 DNS 污染
+- **节点去重**：自动去除重复节点
+- **延迟测试**：单个/批量 TCP 延迟测试
+- **批量导入**：支持批量导入订阅链接
+- **导入导出**：订阅数据备份与恢复
+- **自动刷新**：定时自动刷新订阅
+- **暗色主题**：响应式 Web UI
 
 ## 快速开始
 
+### 一键安装（推荐）
+
 ```bash
-# 下载预编译版本（待发布）
-# 或从源码编译
+# 下载安装脚本
+curl -sSL https://raw.githubusercontent.com/kzb12580/sub-store/main/install.sh -o install.sh
+
+# 带域名安装（自动配置 Nginx + SSL）
+bash install.sh --domain sub.example.com
+
+# 仅本地使用
+bash install.sh --port 8888 --skip-nginx
+
+# 查看帮助
+bash install.sh --help
+```
+
+### 手动编译
+
+```bash
+git clone https://github.com/kzb12580/sub-store.git
+cd sub-store
 go build -o sub-store .
 ./sub-store -port 8888
 ```
 
-打开 http://localhost:8888 使用 Web 面板
+### Docker
+
+```bash
+docker run -d --name sub-store \
+  -p 8888:8888 \
+  -v sub-store-data:/app/data \
+  ghcr.io/kzb12580/sub-store:latest
+```
 
 ## API
 
-| 方法 | 路径 | 说明 |
+| 接口 | 方法 | 说明 |
 |------|------|------|
-| GET | /api/subscriptions | 列出所有订阅 |
-| POST | /api/subscriptions | 添加订阅 {name, url} |
-| PUT | /api/subscriptions/:id | 更新订阅 |
-| DELETE | /api/subscriptions/:id | 删除订阅 |
-| POST | /api/subscriptions/:id/refresh | 刷新订阅 |
-| GET | /api/nodes | 列出所有节点 |
-| GET | /api/nodes/stats | 节点统计 |
-| GET | /api/sub/:id/clash | 输出 Clash 配置 |
-| GET | /api/sub/:id/singbox | 输出 Sing-box 配置 |
-| GET | /api/sub/all/clash | 全量 Clash 配置 |
-| GET | /api/sub/all/singbox | 全量 Sing-box 配置 |
-| POST | /api/doh/resolve | DOH 解析 {domain} |
-| GET | /api/doh/test | 测试 DOH 连通性 |
+| `/api/subscriptions` | GET | 列出所有订阅 |
+| `/api/subscriptions` | POST | 添加订阅 |
+| `/api/subscriptions/:id` | PUT | 更新订阅 |
+| `/api/subscriptions/:id` | DELETE | 删除订阅 |
+| `/api/subscriptions/:id/refresh` | POST | 刷新单个订阅 |
+| `/api/subscriptions/refresh-all` | POST | 刷新全部订阅 |
+| `/api/subscriptions/import` | POST | 批量导入订阅 |
+| `/api/subscriptions/import-text` | POST | 导入文本/URI |
+| `/api/subscriptions/export` | GET | 导出备份 |
+| `/api/nodes` | GET | 列出节点 |
+| `/api/nodes/stats` | GET | 节点统计 |
+| `/api/nodes/ping` | POST | 测试单个节点延迟 |
+| `/api/nodes/ping/batch` | POST | 批量延迟测试 |
+| `/api/sub/:id/clash` | GET | 生成 Clash 配置 |
+| `/api/sub/:id/singbox` | GET | 生成 Sing-box 配置 |
+| `/api/sub/all/clash` | GET | 全部节点 Clash 配置 |
+| `/api/sub/all/singbox` | GET | 全部节点 Sing-box 配置 |
+| `/api/doh/resolve` | POST | DOH 域名解析 |
+| `/api/doh/test` | GET | DOH 连接测试 |
 
-## 订阅输出
+## 订阅链接
 
-复制订阅链接到 Clash/Sing-box 客户端：
+添加订阅后，点击 **Clash** 或 **Sing-box** 按钮复制订阅链接：
 
 ```
-Clash:    http://你的IP:8888/api/sub/订阅ID/clash
-Sing-box: http://你的IP:8888/api/sub/订阅ID/singbox
-全量:     http://your-ip:8888/api/sub/all/clash
+https://your-domain/api/sub/{id}/clash
+https://your-domain/api/sub/{id}/singbox
+https://your-domain/api/sub/all/clash       # 全部合并
+https://your-domain/api/sub/all/singbox     # 全部合并
+```
+
+## 管理
+
+```bash
+# 服务管理
+systemctl start sub-store
+systemctl stop sub-store
+systemctl restart sub-store
+systemctl status sub-store
+
+# 查看日志
+journalctl -u sub-store -f
+
+# 重新编译
+cd /opt/sub-store/src
+go build -o /opt/sub-store/sub-store .
+systemctl restart sub-store
 ```
 
 ## 技术栈
 
-- **后端**: Go + Gin
-- **前端**: 原生 HTML/CSS/JS（embed 进二进制）
-- **存储**: JSON 文件
-- **依赖**: gin, uuid, yaml.v3
+- **后端**：Go + Gin
+- **前端**：原生 HTML/CSS/JS（无框架依赖）
+- **存储**：JSON 文件
+- **DNS**：Cloudflare / Google DoH
 
-## 内存占用
+## License
 
-约 20-30MB，适合 1 核 1G VPS
+MIT

@@ -58,6 +58,11 @@ func FetchAndParse(subURL string) ([]models.Node, error) {
 	return nodes, nil
 }
 
+// ParseSingleURI parses a single proxy URI into a Node.
+func ParseSingleURI(raw string) (*models.Node, error) {
+	return parseURI(raw)
+}
+
 // --- URI parsers ---
 
 func parseURI(raw string) (*models.Node, error) {
