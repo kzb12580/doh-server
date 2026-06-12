@@ -263,7 +263,7 @@ EOF
       die "Docker 镜像拉取失败，请检查网络连接"
     fi
   fi
-  docker compose up -d 2>/dev/null || docker-compose up -d 2>/dev/null
+  docker compose up -d 2>/dev/null || docker-compose up -d
 
   # 验证容器启动
   sleep 3
@@ -392,8 +392,10 @@ EOF
 
   # 语法检查
   if command -v caddy &>/dev/null; then
-    if ! caddy validate --config /etc/caddy/Caddyfile 2>/dev/null; then
-      die "Caddyfile 语法校验失败，请检查配置"
+    local caddy_validate_output
+    caddy_validate_output=$(caddy validate --config /etc/caddy/Caddyfile 2>&1 || true)
+    if ! echo "$caddy_validate_output" | grep -q "Valid configuration"; then
+      die "Caddyfile 语法校验失败:\n$caddy_validate_output"
     fi
   fi
 
@@ -413,12 +415,16 @@ setup_decoy() {
   validate_domain "$domain"
   if [[ -f "$DIR/decoy/index.html" ]]; then
     cp "$DIR/decoy/index.html" "${WEB_DIR}/${domain}/index.html"
+    ok "伪装网站部署完成"
   else
     # 从远程下载（降级，无校验）
-    download_safe_no_fail "${GITHUB_RAW}/main/decoy/index.html" \
-      "${WEB_DIR}/${domain}/index.html" "伪装页面" || true
+    if download_safe_no_fail "${GITHUB_RAW}/main/decoy/index.html" \
+      "${WEB_DIR}/${domain}/index.html" "伪装页面"; then
+      ok "伪装网站部署完成"
+    else
+      wr "伪装页面部署失败（本地文件不存在且远程下载失败）"
+    fi
   fi
-  ok "伪装网站部署完成"
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -783,7 +789,7 @@ show_status() {
   result=$(curl -sf --connect-timeout 5 "$test_url" 2>/dev/null || echo "")
   if echo "$result" | grep -q "Answer" 2>/dev/null; then
     local ip
-    ip=$(echo "$result" | grep -oP '"data"\s*:\s*"\K[^"]+' | head -1)
+    ip=$(echo "$result" | grep -oP '"data"\s*:\s*"\K[^"]+' | head -1 || echo "unknown")
     ok "DOH 正常 → google.com = $ip"
   else
     wr "DOH 未响应"
