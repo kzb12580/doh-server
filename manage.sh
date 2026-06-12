@@ -98,13 +98,21 @@ get_ip() {
   curl -4 -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo ""
 }
 
+# ─── 字符串 trim（纯 bash，不调用外部命令） ───
+trim() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"   # 去首部空白
+  s="${s%"${s##*[![:space:]]}"}"   # 去尾部空白
+  printf '%s' "$s"
+}
+
 load_env() {
   SERVER_IP=""; PORT=80; DOH_PATH="/dns-query"; SSH_PORT=307; DOMAIN=""
   if [[ -f "$ENV_FILE" ]]; then
     while IFS='=' read -r key val; do
       [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
-      key=$(echo "$key" | xargs)
-      val=$(echo "$val" | xargs)
+      key=$(trim "$key")
+      val=$(trim "$val")
       case "$key" in
         SERVER_IP) SERVER_IP="$val" ;;
         PORT) PORT="$val" ;;
@@ -251,7 +259,7 @@ EOF
 
   cd "$DOH_DIR" || die "无法进入 DOH 目录: $DOH_DIR"
   if ! docker compose pull -q 2>/dev/null; then
-    if ! docker-compose pull -q 2>/dev/null; then
+    if ! docker-compose pull -q; then
       die "Docker 镜像拉取失败，请检查网络连接"
     fi
   fi
@@ -331,27 +339,17 @@ install_caddy_binary() {
     "Caddy v${CADDY_VERSION} 二进制包"
 
   local tarball="/tmp/doh-server-downloads/caddy-${ARCH}.tar.gz"
-  if command -v tar &>/dev/null; then
-    tar -xzf "$tarball" -C /tmp/doh-server-downloads/ 2>/dev/null
-    if [[ -f /tmp/doh-server-downloads/caddy ]]; then
-      mv /tmp/doh-server-downloads/caddy /usr/local/bin/caddy
-      chmod +x /usr/local/bin/caddy
-      ok "Caddy 二进制安装完成"
-    else
-      die "解压后未找到 caddy 二进制文件"
-    fi
-  elif command -v unzip &>/dev/null; then
-    unzip -qo "$tarball" -d /tmp/doh-server-downloads/ 2>/dev/null
-    if [[ -f /tmp/doh-server-downloads/caddy ]]; then
-      mv /tmp/doh-server-downloads/caddy /usr/local/bin/caddy
-      chmod +x /usr/local/bin/caddy
-      ok "Caddy 二进制安装完成"
-    else
-      die "解压后未找到 caddy 二进制文件"
-    fi
+  if ! command -v tar &>/dev/null; then
+    die "无法解压 Caddy 包：需要 tar 命令。请运行 apt install tar 或 dnf install tar"
+  fi
+
+  tar -xzf "$tarball" -C /tmp/doh-server-downloads/ 2>/dev/null
+  if [[ -f /tmp/doh-server-downloads/caddy ]]; then
+    mv /tmp/doh-server-downloads/caddy /usr/local/bin/caddy
+    chmod +x /usr/local/bin/caddy
+    ok "Caddy 二进制安装完成"
   else
-    # Fallback: try apt/dnf first then fail
-    die "无法解压 Caddy 包，请安装 tar 或 unzip"
+    die "解压后未找到 caddy 二进制文件"
   fi
 }
 
@@ -544,6 +542,9 @@ EOF
   # 写入版本信息
   echo "SCRIPT_VERSION=$SCRIPT_VERSION" >> "$ENV_FILE"
 
+  # 清理临时下载文件
+  rm -rf "$SAFE_DOWNLOADS_DIR" 2>/dev/null || true
+
   echo ""
   echo -e "${G}╔══════════════════════════════════════════════════════╗${N}"
   echo -e "${G}║                  ✅ 安装完成！                        ║${N}"
@@ -618,6 +619,9 @@ EOF
   chown root:root "$ENV_FILE" 2>/dev/null || true
   echo "SCRIPT_VERSION=$SCRIPT_VERSION" >> "$ENV_FILE"
 
+  # 清理临时下载文件
+  rm -rf "$SAFE_DOWNLOADS_DIR" 2>/dev/null || true
+
   # 保存本地副本
   if [[ -f "${BASH_SOURCE[0]}" ]]; then
     cp "$(realpath "${BASH_SOURCE[0]}")" "$DIR/manage.sh" 2>/dev/null || true
@@ -661,6 +665,14 @@ add_domain() {
 
   p "配置 Caddy..."
   backup_before_change
+
+  # 清理旧域名的伪装页面
+  local OLD_DOMAIN="$DOMAIN"
+  if [[ -n "$OLD_DOMAIN" && -d "${WEB_DIR}/${OLD_DOMAIN}" ]]; then
+    rm -rf "${WEB_DIR}/${OLD_DOMAIN}" 2>/dev/null || true
+    info "已清理旧域名伪装页面: ${WEB_DIR}/${OLD_DOMAIN}"
+  fi
+
   setup_caddy "$DOMAIN_IN" "$DOH_PATH"
   setup_decoy "$DOMAIN_IN"
 
@@ -905,7 +917,22 @@ show_menu() {
 # ═══════════════════════════════════════════════════════════════
 #  入口
 # ═══════════════════════════════════════════════════════════════
-if [[ "${1:-}" = "--ip" ]]; then
+if [[ "${1:-}" = "--help" || "${1:-}" = "-h" ]]; then
+  echo "DOH + 安全加固 管理脚本 v${SCRIPT_VERSION}"
+  echo ""
+  echo "用法:"
+  echo "  sudo bash manage.sh              交互式菜单"
+  echo "  sudo bash manage.sh --ip         IP 直连模式安装"
+  echo "  sudo bash manage.sh --domain FQDN  域名 + HTTPS 模式安装"
+  echo "  sudo bash manage.sh --version    显示版本"
+  echo "  sudo bash manage.sh --help       显示帮助"
+  echo ""
+  echo "项目: https://github.com/${REPO_OWNER}/${REPO_NAME}"
+  exit 0
+elif [[ "${1:-}" = "--version" || "${1:-}" = "-v" ]]; then
+  echo "doh-server v${SCRIPT_VERSION}"
+  exit 0
+elif [[ "${1:-}" = "--ip" ]]; then
   install_ip
 elif [[ "${1:-}" = "--domain" ]] && [[ -n "${2:-}" ]]; then
   # 非交互模式
@@ -930,11 +957,14 @@ elif [[ "${1:-}" = "--domain" ]] && [[ -n "${2:-}" ]]; then
 SERVER_IP=$IP
 PORT=80
 DOH_PATH=/dns-query
-SSH_PORT=307
+SSH_PORT=$SSH_PORT_IN
 DOMAIN=$DOMAIN
 EOF
   chmod 600 "$ENV_FILE"
   echo "SCRIPT_VERSION=$SCRIPT_VERSION" >> "$ENV_FILE"
+
+  # 清理临时下载文件
+  rm -rf "$SAFE_DOWNLOADS_DIR" 2>/dev/null || true
 
   # 保存本地副本
   if [[ -f "${BASH_SOURCE[0]}" ]]; then
