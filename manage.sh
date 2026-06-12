@@ -179,12 +179,12 @@ install_deps() {
     docker_script=$(mktemp /tmp/doh-docker-install.XXXXXX.sh)
 
     if curl -fsSL --connect-timeout 30 https://get.docker.com -o "$docker_script"; then
-      if bash "$docker_script"; then
-        ok "Docker 安装完成"
-      else
+      if ! bash "$docker_script"; then
+        rm -f "$docker_script"
         die "Docker 安装脚本执行失败"
       fi
       rm -f "$docker_script"
+      ok "Docker 安装完成"
     else
       die "无法下载 Docker 安装脚本"
     fi
@@ -343,7 +343,7 @@ install_caddy_binary() {
     die "无法解压 Caddy 包：需要 tar 命令。请运行 apt install tar 或 dnf install tar"
   fi
 
-  tar -xzf "$tarball" -C /tmp/doh-server-downloads/ 2>/dev/null
+  tar -xzf "$tarball" -C /tmp/doh-server-downloads/ || die "Caddy 压缩包解压失败"
   if [[ -f /tmp/doh-server-downloads/caddy ]]; then
     mv /tmp/doh-server-downloads/caddy /usr/local/bin/caddy
     chmod +x /usr/local/bin/caddy
@@ -813,7 +813,7 @@ uninstall_all() {
   # 显示将要删除的内容
   if [[ -d "$DIR" ]]; then
     echo -e "  将要删除: ${C}$DIR${N}"
-    du -sh "$DIR" 2>/dev/null | sed 's/^/    /'
+    du -sh "$DIR" 2>/dev/null | sed 's/^/    /' || true
   fi
   if [[ -f /etc/caddy/Caddyfile ]]; then
     echo -e "  将要删除: ${C}/etc/caddy/Caddyfile${N}"
