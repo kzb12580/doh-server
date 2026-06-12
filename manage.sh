@@ -203,7 +203,7 @@ install_deps() {
 
   # 验证 Docker 版本
   local docker_ver
-  docker_ver=$(docker --version 2>/dev/null | grep -oP '[\d.]+' | head -1 || echo "unknown")
+  docker_ver=$(docker --version 2>/dev/null | grep -oE '[0-9.]+' | head -1 || echo "unknown")
   info "Docker 版本: $docker_ver"
 }
 
@@ -231,6 +231,8 @@ services:
     image: satishweb/doh-server:latest
     container_name: doh-server
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:8054:8054"
     environment:
       UPSTREAM_DNS_SERVER: udp:127.0.0.1:8053
       DOH_HTTP_PREFIX: /dns-query
@@ -303,7 +305,7 @@ install_caddy() {
       gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg < "$caddy_gpg_key" 2>/dev/null || true
     fi
     rm -f "$caddy_gpg_key"
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' </dev/null | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null || true
+    curl --tlsv1.2 -sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' </dev/null | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null || true
     apt-get update -qq </dev/null 2>/dev/null || true
     if ! apt-get install -y -qq caddy </dev/null 2>/dev/null; then
       wr "apt 安装 Caddy 失败，尝试直接从二进制安装"
@@ -789,7 +791,7 @@ show_status() {
   result=$(curl -sf --connect-timeout 5 "$test_url" 2>/dev/null || echo "")
   if echo "$result" | grep -q "Answer" 2>/dev/null; then
     local ip
-    ip=$(echo "$result" | grep -oP '"data"\s*:\s*"\K[^"]+' | head -1 || echo "unknown")
+    ip=$(echo "$result" | grep -oE '"data"\s*:\s*"[^"]+"' | head -1 | sed 's/.*"data"\s*:\s*"//;s/"$//' || echo "unknown")
     ok "DOH 正常 → google.com = $ip"
   else
     wr "DOH 未响应"
