@@ -1,4 +1,4 @@
-﻿# DOH Server
+# DOH Server
 
 > **⚠️ 安全警告**：不建议直接使用 `curl | bash` 方式安装。请先下载脚本审查内容，确认无误后再执行。
 
@@ -36,6 +36,16 @@ sudo bash manage.sh --ip
 ```bash
 curl -sSL -o manage.sh https://raw.githubusercontent.com/kzb12580/doh-server/main/manage.sh
 sudo bash manage.sh --domain sub.example.com
+```
+
+## 命令行参数
+
+```bash
+sudo bash manage.sh              # 交互式菜单
+sudo bash manage.sh --ip         # IP 直连模式安装
+sudo bash manage.sh --domain FQDN  # 域名 + HTTPS 模式安装
+sudo bash manage.sh --version    # 显示版本
+sudo bash manage.sh --help       # 显示帮助
 ```
 
 ## 管理
@@ -103,8 +113,8 @@ sudo bash /opt/doh-server/manage.sh
 
 ## 安全特性
 
-- ✅ 所有远程文件下载使用安全方法（下载后校验和验证）
-- ✅ Docker 安装脚本不通过管道直接执行
+- ✅ 远程文件下载使用安全方法（先存临时文件再移动，支持校验和验证）
+- ✅ Docker 安装脚本下载到临时文件后执行，不通过管道直接运行
 - ✅ GPG 密钥下载后本地处理，不使用 `curl | gpg` 管道
 - ✅ Caddy 二进制从 GitHub Releases 下载，固定版本号
 - ✅ `.env` 配置文件安全解析（白名单字段，不执行任意代码）
