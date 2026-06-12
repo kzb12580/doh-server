@@ -208,10 +208,11 @@ install_deps() {
 }
 
 setup_doh() {
+  local doh_port_binding="${1:-127.0.0.1:8054:8054}"
   p "配置 DOH..."
   mkdir -p "$DOH_DIR"
 
-  cat > "$DOH_DIR/docker-compose.yml" << 'EOF'
+  cat > "$DOH_DIR/docker-compose.yml" << EOF
 services:
   coredns:
     image: coredns/coredns:1.12.3
@@ -232,9 +233,9 @@ services:
     container_name: doh-server
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8054:8054"
+      - "${doh_port_binding}"
     environment:
-      UPSTREAM_DNS_SERVER: udp:127.0.0.1:8053
+      UPSTREAM_DNS_SERVER: udp://coredns:8053
       DOH_HTTP_PREFIX: /dns-query
       DOH_SERVER_LISTEN: 0.0.0.0:8054
       DOH_SERVER_TIMEOUT: 10
@@ -527,7 +528,7 @@ install_ip() {
   backup_before_change
 
   install_deps
-  setup_doh
+  setup_doh "0.0.0.0:${PORT_IN}:8054"
   setup_firewall "$SSH_IN" "$PORT_IN"
 
   mkdir -p "$DIR"
@@ -559,6 +560,7 @@ EOF
   echo -e "${G}╚══════════════════════════════════════════════════════╝${N}"
   echo ""
   echo -e "  🔒 DOH:  ${C}http://${IP}:${PORT_IN}/dns-query?name=google.com${N}"
+  echo -e "  ${Y}注意: DOH 实际监听端口 ${PORT_IN}，防火墙已放行${N}"
   echo ""
   echo -e "  ${Y}日志: ${N}$LOG_FILE"
 }
@@ -786,7 +788,9 @@ show_status() {
   echo ""
   echo -e "${C}  ═══ DOH 测试 ═══${N}"
   echo ""
-  local test_url="http://127.0.0.1:8054/dns-query?name=google.com&type=A"
+  local test_port="8054"
+  [[ -z "$DOMAIN" ]] && test_port="$PORT"
+  local test_url="http://127.0.0.1:${test_port}/dns-query?name=google.com&type=A"
   local result
   result=$(curl -sf --connect-timeout 5 "$test_url" 2>/dev/null || echo "")
   if echo "$result" | grep -q "Answer" 2>/dev/null; then
